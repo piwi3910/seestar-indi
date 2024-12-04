@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seestar Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-ok { background-color: #28a745; }
+        .status-busy { background-color: #ffc107; }
+        .status-error { background-color: #dc3545; }
+        .card { margin-bottom: 1rem; }
+        #log-viewer {
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .nav-tabs { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-telescope"></i> Seestar Control Panel
+            </a>
+            <div class="navbar-text text-light">
+                <span id="connection-status">
+                    <span class="status-indicator" id="status-dot"></span>
+                    <span id="status-text">Connecting...</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#status">Status</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#control">Control</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#config">Configuration</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#logs">Logs</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Status Tab -->
+            <div class="tab-pane fade show active" id="status">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Mount Status</div>
+                            <div class="card-body">
+                                <p>RA: <span id="mount-ra">-</span></p>
+                                <p>DEC: <span id="mount-dec">-</span></p>
+                                <p>Slewing: <span id="mount-slewing">-</span></p>
+                                <p>Tracking: <span id="mount-tracking">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Camera Status</div>
+                            <div class="card-body">
+                                <p>Exposing: <span id="camera-exposing">-</span></p>
+                                <p>Filter: <span id="camera-filter">-</span></p>
+                                <p>Focus: <span id="camera-focus">-</span></p>
+                                <p>Temperature: <span id="camera-temp">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Tab -->
+            <div class="tab-pane fade" id="control">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Mount Control</div>
+                            <div class="card-body">
+                                <form id="goto-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">RA (hours)</label>
+                                        <input type="number" class="form-control" id="goto-ra" step="0.000001">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">DEC (degrees)</label>
+                                        <input type="number" class="form-control" id="goto-dec" step="0.000001">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Goto</button>
+                                    <button type="button" class="btn btn-danger" id="stop-button">Stop</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Camera Control</div>
+                            <div class="card-body">
+                                <form id="expose-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Duration (seconds)</label>
+                                        <input type="number" class="form-control" id="expose-duration" step="0.1" min="0.001">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Gain</label>
+                                        <input type="number" class="form-control" id="expose-gain" min="0" max="100">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Expose</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">Filter Control</div>
+                            <div class="card-body">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-primary" onclick="moveFilter(0)">Clear</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="moveFilter(1)">LP</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">Focus Control</div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Position</label>
+                                    <input type="number" class="form-control" id="focus-position">
+                                    <div class="btn-group mt-2" role="group">
+                                        <button type="button" class="btn btn-outline-primary" onclick="focusRelative(-1000)">-1000</button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="focusRelative(-100)">-100</button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="focusRelative(100)">+100</button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="focusRelative(1000)">+1000</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="setFocusPosition()">Set</button>
+                                <button type="button" class="btn btn-success" onclick="startAutoFocus()">Auto Focus</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Tab -->
+            <div class="tab-pane fade" id="config">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Camera Configuration</div>
+                            <div class="card-body">
+                                <form id="camera-config">
+                                    <div class="mb-3">
+                                        <label class="form-label">Max Exposure</label>
+                                        <input type="number" class="form-control" name="camera.max_exposure" value="{{ config.camera.max_exposure }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Max Gain</label>
+                                        <input type="number" class="form-control" name="camera.max_gain" value="{{ config.camera.max_gain }}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">API Configuration</div>
+                            <div class="card-body">
+                                <form id="api-config">
+                                    <div class="mb-3">
+                                        <label class="form-label">Host</label>
+                                        <input type="text" class="form-control" name="api.host" value="{{ config.api.host }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Port</label>
+                                        <input type="number" class="form-control" name="api.port" value="{{ config.api.port }}">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-pane fade" id="logs">
+                <div class="card">
+                    <div class="card-header">
+                        Log Viewer
+                        <button class="btn btn-sm btn-outline-secondary float-end" onclick="clearLogs()">Clear</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="log-viewer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io/client-dist/socket.io.min.js"></script>
+    <script>
+        // Connect to WebSocket
+        const socket = io();
+
+        // Update status indicators
+        socket.on('state_update', function(state) {
+            // Update connection status
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            if (state.connected) {
+                statusDot.className = 'status-indicator status-ok';
+                statusText.textContent = 'Connected';
+            } else {
+                statusDot.className = 'status-indicator status-error';
+                statusText.textContent = 'Disconnected';
+            }
+
+            // Update mount status
+            document.getElementById('mount-ra').textContent = state.ra.toFixed(6);
+            document.getElementById('mount-dec').textContent = state.dec.toFixed(6);
+            document.getElementById('mount-slewing').textContent = state.slewing;
+            document.getElementById('mount-tracking').textContent = state.tracking;
+
+            // Update camera status
+            document.getElementById('camera-exposing').textContent = state.exposing;
+            document.getElementById('camera-filter').textContent = state.filter_position === 0 ? 'Clear' : 'LP';
+            document.getElementById('camera-focus').textContent = state.focus_position;
+            document.getElementById('camera-temp').textContent = state.focus_temperature.toFixed(1) + '°C';
+        });
+
+        // Handle form submissions
+        document.getElementById('goto-form').onsubmit = function(e) {
+            e.preventDefault();
+            fetch('/control/goto', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    ra: parseFloat(document.getElementById('goto-ra').value),
+                    dec: parseFloat(document.getElementById('goto-dec').value)
+                })
+            });
+        };
+
+        document.getElementById('expose-form').onsubmit = function(e) {
+            e.preventDefault();
+            fetch('/control/expose', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    duration: parseFloat(document.getElementById('expose-duration').value),
+                    gain: parseInt(document.getElementById('expose-gain').value)
+                })
+            });
+        };
+
+        // Handle button clicks
+        document.getElementById('stop-button').onclick = function() {
+            fetch('/control/stop', {method: 'POST'});
+        };
+
+        function moveFilter(position) {
+            fetch('/control/filter', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({position: position})
+            });
+        }
+
+        function setFocusPosition() {
+            fetch('/control/focus', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    position: parseInt(document.getElementById('focus-position').value)
+                })
+            });
+        }
+
+        function focusRelative(steps) {
+            fetch('/control/focus', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({relative: steps})
+            });
+        }
+
+        function startAutoFocus() {
+            fetch('/control/focus', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({auto: true})
+            });
+        }
+
+        // Handle configuration forms
+        document.querySelectorAll('form[id$="-config"]').forEach(form => {
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const updates = {};
+                for (let [key, value] of formData.entries()) {
+                    const [section, field] = key.split('.');
+                    updates[section] = updates[section] || {};
+                    updates[section][field] = value;
+                }
+                fetch('/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(updates)
+                });
+            };
+        });
+
+        // Log viewer
+        const logViewer = document.getElementById('log-viewer');
+        const logSource = new EventSource('/logs');
+        
+        logSource.onmessage = function(e) {
+            logViewer.textContent += e.data + '\n';
+            logViewer.scrollTop = logViewer.scrollHeight;
+        };
+
+        function clearLogs() {
+            logViewer.textContent = '';
+        }
+
+        // Status updates
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update status displays
+                    document.getElementById('mount-ra').textContent = data.ra.toFixed(6);
+                    document.getElementById('mount-dec').textContent = data.dec.toFixed(6);
+                    // ... update other status fields
+                });
+        }
+
+        // Update status every second
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>

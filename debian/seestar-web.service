@@ -1,0 +1,15 @@
+[Unit]
+Description=Seestar Web Interface
+After=network.target seestar-indi.service
+
+[Service]
+Type=simple
+User=root
+Environment=SEESTAR_CONFIG_DIR=/etc/seestar
+Environment=SEESTAR_LOG_DIR=/var/log/seestar
+ExecStart=/usr/bin/seestar-web
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

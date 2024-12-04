@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=seestar-indi
+export DH_VERBOSE=1
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_install:
+	dh_auto_install
+	# Install configuration
+	mkdir -p debian/seestar-indi/etc/seestar
+	cp config.toml.example debian/seestar-indi/etc/seestar/config.toml
+	# Create log directory
+	mkdir -p debian/seestar-indi/var/log/seestar
+
+override_dh_installsystemd:
+	dh_installsystemd --name=seestar-indi
+	dh_installsystemd --name=seestar-web
+
+# Don't run tests during build
+override_dh_auto_test:

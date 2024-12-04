@@ -1,0 +1,36 @@
+Source: seestar-indi
+Section: science
+Priority: optional
+Maintainer: Your Name <your.email@example.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-setuptools,
+               python3-pip
+Standards-Version: 4.5.1
+Homepage: https://github.com/yourusername/seestar-indi
+Rules-Requires-Root: no
+
+Package: seestar-indi
+Architecture: all
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         python3-pyindi-client,
+         python3-requests,
+         python3-astropy,
+         python3-blinker,
+         python3-tomli,
+         python3-flask,
+         python3-flask-socketio,
+         python3-gevent,
+         python3-gevent-websocket
+Description: INDI Driver for Seestar Telescope
+ INDI driver implementation for the Seestar S50 Smart Telescope.
+ .
+ Features:
+  * Mount control (movement, tracking, sync)
+  * Camera control (exposure, gain)
+  * Filter wheel control
+  * Focuser control (manual and auto focus)
+  * Web-based control panel
+  * Command-line interface

@@ -1,0 +1,17 @@
+[Unit]
+Description=Seestar INDI Driver
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment=INDIDEV=Seestar S50
+Environment=INDICONFIG=1
+Environment=SEESTAR_CONFIG_DIR=/etc/seestar
+Environment=SEESTAR_LOG_DIR=/var/log/seestar
+ExecStart=/usr/bin/seestar-indi
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

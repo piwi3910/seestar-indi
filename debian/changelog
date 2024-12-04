@@ -1,0 +1,14 @@
+seestar-indi (1.0.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Features:
+    - Mount control (movement, tracking, sync)
+    - Camera control (exposure, gain)
+    - Filter wheel control
+    - Focuser control (manual and auto focus)
+    - Web-based control panel
+    - Command-line interface
+    - Configuration management
+    - Structured logging
+
+ -- Your Name <your.email@example.com>  Wed, 24 Jan 2024 12:00:00 +0000

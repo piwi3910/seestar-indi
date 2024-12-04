@@ -1,0 +1,45 @@
+# Core dependencies
+PyIndi>=1.9.0
+requests>=2.28.0
+astropy>=5.0.0
+
+# State management
+blinker>=1.5.0
+
+# Configuration
+tomli>=2.0.0
+tomli-w>=1.0.0
+
+# Web interface
+Flask>=2.0.0
+Flask-SocketIO>=5.1.1
+gevent>=21.8.0
+gevent-websocket>=0.10.1
+
+# Security
+PyJWT>=2.3.0
+bcrypt>=3.2.0
+pyOpenSSL>=21.0.0
+cryptography>=36.0.0
+Flask-Limiter>=2.4.0
+
+# Testing
+coverage>=6.5.0
+pytest>=7.3.0
+pytest-mock>=3.10.0
+
+# Type checking
+mypy>=1.0.0
+types-requests>=2.28.0
+types-PyJWT>=1.7.1
+types-cryptography>=3.3.21
+
+# Development tools
+black>=22.0.0  # Code formatting
+isort>=5.10.0  # Import sorting
+flake8>=4.0.0  # Code linting
+pylint>=2.15.0  # Code analysis
+
+# Documentation
+sphinx>=4.5.0
+sphinx-rtd-theme>=1.0.0

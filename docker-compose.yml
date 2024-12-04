@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Development environment
+  dev:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+      - ~/.config/seestar:/app/config
+      - ./logs:/app/logs
+      - ./images:/app/images
+    ports:
+      - "8080:8080"  # Web interface
+      - "9090:9090"  # Metrics
+    environment:
+      - SEESTAR_CONFIG_DIR=/app/config
+      - SEESTAR_LOG_DIR=/app/logs
+      - SEESTAR_LOG_LEVEL=DEBUG
+      - INDIDEV=Seestar S50
+      - INDICONFIG=1
+    command: python -m indi.seestar_driver
+    networks:
+      - seestar-net
+
+  # Testing environment
+  test:
+    build:
+      context: .
+      target: test
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    environment:
+      - SEESTAR_CONFIG_DIR=/app/config
+      - SEESTAR_LOG_DIR=/app/logs
+      - SEESTAR_LOG_LEVEL=DEBUG
+    command: pytest --cov=. --cov-report=xml --cov-report=term-missing
+    networks:
+      - seestar-net
+
+  # Production environment
+  prod:
+    build:
+      context: .
+      target: prod
+    ports:
+      - "8080:8080"  # Web interface
+      - "9090:9090"  # Metrics
+    volumes:
+      - ~/.config/seestar:/app/config
+      - ./logs:/app/logs
+      - ./images:/app/images
+    environment:
+      - SEESTAR_CONFIG_DIR=/app/config
+      - SEESTAR_LOG_DIR=/app/logs
+      - SEESTAR_LOG_LEVEL=INFO
+      - INDIDEV=Seestar S50
+      - INDICONFIG=1
+    restart: unless-stopped
+    networks:
+      - seestar-net
+
+  # Code quality checks
+  lint:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+        black . &&
+        isort . &&
+        flake8 . &&
+        pylint indi/ &&
+        mypy indi/
+      "
+    networks:
+      - seestar-net
+
+  # Documentation generation
+  docs:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+      - ./docs:/app/docs
+    command: sphinx-build -b html docs/source docs/build/html
+    networks:
+      - seestar-net
+
+  # Package building
+  build:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+      - ./dist:/app/dist
+    command: ./build_packages.sh
+    networks:
+      - seestar-net
+
+networks:
+  seestar-net:
+    driver: bridge
